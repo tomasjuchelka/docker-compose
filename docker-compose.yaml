@@ -8,6 +8,8 @@ services:
       - "/home/pi/docker/homeassistant:/config"
       - "/home/pi/media:/media"
       - "/etc/localtime:/etc/localtime:ro"
+      - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
       PUID: "1000"
       PGID: "1000"
@@ -16,7 +18,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{4}\\.\\d{1,2}\\.\\d{1,2}$$"
     depends_on:
       - "influxdb"
@@ -40,7 +42,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
     restart: always
 
@@ -61,7 +63,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^build-\\d{1,4}$$"
     restart: always
 
@@ -73,10 +75,11 @@ services:
     ports:
       - "8086:8086"
     labels:
-      - "diun.enable=true"
+      - "diun.enable=false"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+    platform: "linux/arm/v7"
     restart: always
 
   home-assistant-mariadb:
@@ -103,7 +106,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
     restart: always
     
@@ -119,7 +122,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}$$"
     restart: always
 
@@ -132,7 +135,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
     restart: always
 
@@ -147,7 +150,7 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
     restart: always
 
@@ -174,6 +177,21 @@ services:
     labels:
       - "diun.enable=true"
       - "diun.watch_repo=true"
-      - "diun.max_tags=10"
+      - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
     restart: always
+
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8080:80/tcp"
+    environment:
+      TZ: "Europe/Prague"
+    volumes:
+      - "/home/pi/docker/pihole/pihole:/etc/pihole/"
+      - "/home/pi/docker/pihole/dnsmasq:/etc/dnsmasq.d/"
+    restart: unless-stopped
