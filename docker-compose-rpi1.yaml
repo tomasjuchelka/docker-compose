@@ -1,0 +1,82 @@
+version: "3.5"
+
+services:
+  home-assistant:
+    image: homeassistant/raspberrypi4-homeassistant:stable
+    container_name: home-assistant
+    volumes:
+      - "/nfs/docker/homeassistant:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      UMASK: "007"
+    network_mode: "host"
+    depends_on:
+      - "influxdb"
+      - "home-assistant-mariadb"
+      - "deconz"
+    privileged: true
+    restart: unless-stopped
+
+  deconz:
+    image: marthoc/deconz:latest
+    container_name: deconz
+    volumes:
+      - "/nfs/docker/deconz:/root/.local/share/dresden-elektronik/deCONZ"
+      - "/etc/localtime:/etc/localtime:ro"
+    devices:
+      - "/dev/ttyACM0"
+    network_mode: "host"
+    environment:
+      DECONZ_VNC_MODE: "0"
+      DECONZ_VNC_PORT: "5901"
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb/influxdb:latest
+    container_name: influxdb
+    volumes:
+      - "/nfs/docker/influxdb:/var/lib/influxdb"
+    ports:
+      - "8086:8086"
+    platform: "linux/arm/v7"
+    restart: unless-stopped
+
+  home-assistant-mariadb:
+    image: jsurf/rpi-mariadb:latest
+    container_name: home-assistant-mariadb
+    volumes:
+      - "/nfs/docker/mariadb:/var/lib/mysql"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "pi"
+    restart: unless-stopped
+    
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8080:80/tcp"
+    environment:
+      TZ: "Europe/Prague"
+    volumes:
+      - "/nfs/docker/pihole/pihole:/etc/pihole/"
+      - "/nfs/docker/pihole/dnsmasq:/etc/dnsmasq.d/"
+    restart: unless-stopped
+    
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/nfs/docker/portainer_rpi1:/data"
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
