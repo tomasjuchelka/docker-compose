@@ -1,0 +1,12 @@
+version: "3.5"
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/nfs/docker/portainer_rpi3:/data"
+    ports:
+      - "9000:9000"
+    restart: unless-stopped

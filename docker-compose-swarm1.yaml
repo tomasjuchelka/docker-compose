@@ -1,0 +1,106 @@
+version: "3.9"
+services:
+
+  home-assistant:
+    image: homeassistant/raspberrypi4-homeassistant:stable
+    ports:
+      - "8123:8123"
+    volumes:
+      - "/nfs/docker/homeassistant:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/nfs/docker/homeassistant/docker/run:/etc/services.d/home-assistant/run"
+    environment:
+      - "PUID=1000"
+      - "PGID=1000"
+      - "UMASK=007"
+      - "PACKAGES=iputils"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    volumes:
+      - "/nfs/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+      - "/nfs/docker/mosquitto/data:/mosquitto/data"
+      - "/nfs/docker/mosquitto/log:/mosquitto/log"
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  pihole:
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8080:80/tcp"
+    environment:
+      TZ: "Europe/Prague"
+    volumes:
+      - "/nfs/docker/pihole/pihole:/etc/pihole/"
+      - "/nfs/docker/pihole/dnsmasq:/etc/dnsmasq.d/"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  room-assistant:
+    image: mkerix/room-assistant:latest
+    networks:
+      - "outside"
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - /nfs/docker/roomassistant/config:/room-assistant/config
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  influxdb:
+    image: arm32v7/influxdb:latest
+    volumes:
+      - "/nfs/docker/influxdb:/var/lib/influxdb"
+    ports:
+      - "8086:8086"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  mariadb:
+    image: jsurf/rpi-mariadb:latest
+    volumes:
+      - "/nfs/docker/mariadb:/var/lib/mysql"
+    ports:
+      - "3306:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=pi"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    
+  visualizer:
+    image: alexellis2/visualizer-arm:latest
+    ports:
+      - "8081:8080"
+    stop_grace_period: 1m30s
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+
+networks:
+  outside:
+    name: "host"
+    external: true
