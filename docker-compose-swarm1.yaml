@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   home-assistant:
-    image: homeassistant/raspberrypi4-homeassistant:stable
+    image: homeassistant/raspberrypi4-homeassistant:2021.11.2
     ports:
       - "8123:8123"
     volumes:
@@ -22,7 +22,7 @@ services:
         condition: on-failure
 
   mosquitto:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0.13
     volumes:
       - "/nfs/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf"
       - "/nfs/docker/mosquitto/data:/mosquitto/data"
@@ -36,14 +36,14 @@ services:
         condition: on-failure
 
   pihole:
-    image: pihole/pihole:latest
+    image: pihole/pihole:2021.10.1
     ports:
       - "53:53/tcp"
       - "53:53/udp"
       - "67:67/udp"
       - "8080:80/tcp"
     environment:
-      TZ: "Europe/Prague"
+      - "TZ=Europe/Prague"
     volumes:
       - "/nfs/docker/pihole/pihole:/etc/pihole/"
       - "/nfs/docker/pihole/dnsmasq:/etc/dnsmasq.d/"
@@ -53,7 +53,7 @@ services:
         condition: on-failure
 
   room-assistant:
-    image: mkerix/room-assistant:latest
+    image: mkerix/room-assistant:2.19.1
     networks:
       - "outside"
     volumes:
@@ -65,7 +65,7 @@ services:
         condition: on-failure
 
   influxdb:
-    image: arm32v7/influxdb:latest
+    image: arm32v7/influxdb:1.8
     volumes:
       - "/nfs/docker/influxdb:/var/lib/influxdb"
     ports:
@@ -76,26 +76,43 @@ services:
         condition: on-failure
 
   mariadb:
-    image: jsurf/rpi-mariadb:latest
+    image: linuxserver/mariadb:10.5.12
     volumes:
-      - "/nfs/docker/mariadb:/var/lib/mysql"
+      - "/nfs/docker/mariadb:/config"
     ports:
       - "3306:3306"
     environment:
-      - "MYSQL_ROOT_PASSWORD=pi"
+      - "TZ=Europe/Prague"
+      - "MYSQL_ROOT_PASSWORD=raspberry"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
     
-  visualizer:
-    image: alexellis2/visualizer-arm:latest
-    ports:
-      - "8081:8080"
-    stop_grace_period: 1m30s
+  agent:
+    image: portainer/agent:2.10.0
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/lib/docker/volumes:/var/lib/docker/volumes"
+    networks:
+      - agent_network
     deploy:
+      mode: global
+
+  portainer:
+    image: portainer/portainer-ce:2.9.2
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - "/nfs/docker/portainer:/data"
+    networks:
+      - agent_network
+    deploy:
+      mode: replicated
+      replicas: 1
       placement:
         constraints:
           - "node.role==manager"
@@ -104,3 +121,6 @@ networks:
   outside:
     name: "host"
     external: true
+  agent_network:
+    driver: overlay
+    attachable: true
