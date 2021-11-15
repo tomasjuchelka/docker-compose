@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   home-assistant:
-    image: homeassistant/raspberrypi4-homeassistant:2021.11.2
+    image: homeassistant/raspberrypi4-homeassistant:2021.11.3
     ports:
       - "8123:8123"
     volumes:
@@ -20,6 +20,14 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - "node.role==manager"
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{4}\\.\\d{1,2}\\.\\d{1,2}$$"
 
   mosquitto:
     image: eclipse-mosquitto:2.0.13
@@ -34,6 +42,11 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   pihole:
     image: pihole/pihole:2021.10.1
@@ -51,11 +64,18 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{4}\\.\\d{1,2}\\.\\d{1,2}$$"
 
   room-assistant:
     image: mkerix/room-assistant:2.19.1
     networks:
       - "outside"
+    cap_add:
+      - NET_ADMIN
     volumes:
       - /var/run/dbus:/var/run/dbus
       - /nfs/docker/roomassistant/config:/room-assistant/config
@@ -63,22 +83,38 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - "node.role==manager"
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   influxdb:
     image: arm32v7/influxdb:1.8
     volumes:
-      - "/nfs/docker/influxdb:/var/lib/influxdb"
+      - "/mnt/ssd/docker/influxdb:/var/lib/influxdb"
     ports:
       - "8086:8086"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - "node.hostname==raspberrypi-2b1"
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   mariadb:
     image: linuxserver/mariadb:10.5.12
     volumes:
-      - "/nfs/docker/mariadb:/config"
+      - "/mnt/ssd/docker/mariadb:/config"
     ports:
       - "3306:3306"
     environment:
@@ -88,6 +124,14 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+      placement:
+        constraints:
+          - "node.hostname==raspberrypi-2b1"
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
     
   agent:
     image: portainer/agent:2.10.0
@@ -98,6 +142,11 @@ services:
       - agent_network
     deploy:
       mode: global
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   portainer:
     image: portainer/portainer-ce:2.9.2
@@ -113,9 +162,65 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+      restart_policy:
+        condition: on-failure
       placement:
         constraints:
           - "node.role==manager"
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+
+  chronograf:
+    image: chronograf:1.9.1
+    volumes:
+      - "/nfs/docker/chronograf:/var/lib/chronograf"
+    ports:
+      - "8888:8888"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+
+  diun:
+    image: crazymax/diun:4.20.1
+    command: serve
+    volumes:
+      - "/nfs/docker/diun:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - "TZ=Europe/Prague"
+      - "LOG_LEVEL=info"
+      - "LOG_JSON=false"
+      - "DIUN_WATCH_WORKERS=20"
+      - "DIUN_WATCH_SCHEDULE=0 */6 * * *"
+      - "DIUN_WATCH_FIRSTCHECKNOTIF=true"
+      - "DIUN_PROVIDERS_SWARM=true"
+      - "DIUN_NOTIF_MQTT_SCHEME=mqtt"
+      - "DIUN_NOTIF_MQTT_HOST=192.168.11.100"
+      - "DIUN_NOTIF_MQTT_PORT=1883"
+      - "DIUN_NOTIF_MQTT_CLIENT=DIUN"
+      - "DIUN_NOTIF_MQTT_TOPIC=diun/docker_version"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
 networks:
   outside:
