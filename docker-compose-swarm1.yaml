@@ -2,11 +2,12 @@ version: "3.9"
 services:
 
   home-assistant:
-    image: homeassistant/raspberrypi4-homeassistant:2021.11.3
+    image: homeassistant/raspberrypi4-homeassistant:2022.3.0
     ports:
       - "8123:8123"
     volumes:
       - "/nfs/docker/homeassistant:/config"
+      - "/nfs/docker/media:/media"
       - "/etc/localtime:/etc/localtime:ro"
       - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -30,7 +31,7 @@ services:
         - "diun.include_tags=^\\d{4}\\.\\d{1,2}\\.\\d{1,2}$$"
 
   mosquitto:
-    image: eclipse-mosquitto:2.0.13
+    image: eclipse-mosquitto:2.0.14
     volumes:
       - "/nfs/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf"
       - "/nfs/docker/mosquitto/data:/mosquitto/data"
@@ -49,12 +50,12 @@ services:
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   pihole:
-    image: pihole/pihole:2021.10.1
+    image: pihole/pihole:2022.02.1
     ports:
       - "53:53/tcp"
       - "53:53/udp"
       - "67:67/udp"
-      - "8080:80/tcp"
+      - "8081:80/tcp"
     environment:
       - "TZ=Europe/Prague"
     volumes:
@@ -71,7 +72,7 @@ services:
         - "diun.include_tags=^\\d{4}\\.\\d{1,2}\\.\\d{1,2}$$"
 
   room-assistant:
-    image: mkerix/room-assistant:2.19.1
+    image: mkerix/room-assistant:2.20.0
     networks:
       - "outside"
     cap_add:
@@ -112,7 +113,7 @@ services:
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   mariadb:
-    image: linuxserver/mariadb:10.5.12
+    image: linuxserver/mariadb:10.5.15
     volumes:
       - "/mnt/ssd/docker/mariadb:/config"
     ports:
@@ -134,7 +135,7 @@ services:
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
     
   agent:
-    image: portainer/agent:2.10.0
+    image: portainer/agent:2.12.1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/var/lib/docker/volumes:/var/lib/docker/volumes"
@@ -149,7 +150,7 @@ services:
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   portainer:
-    image: portainer/portainer-ce:2.9.2
+    image: portainer/portainer-ce:2.11.1
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     ports:
       - "9443:9443"
@@ -173,24 +174,24 @@ services:
         - "diun.max_tags=5"
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
-  chronograf:
-    image: chronograf:1.9.1
-    volumes:
-      - "/nfs/docker/chronograf:/var/lib/chronograf"
-    ports:
-      - "8888:8888"
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-      labels:
-        - "diun.enable=true"
-        - "diun.watch_repo=true"
-        - "diun.max_tags=5"
-        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+  # chronograf:
+    # image: chronograf:1.9.1
+    # volumes:
+      # - "/nfs/docker/chronograf:/var/lib/chronograf"
+    # ports:
+      # - "8888:8888"
+    # deploy:
+      # replicas: 1
+      # restart_policy:
+        # condition: on-failure
+      # labels:
+        # - "diun.enable=true"
+        # - "diun.watch_repo=true"
+        # - "diun.max_tags=5"
+        # - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   diun:
-    image: crazymax/diun:4.20.1
+    image: crazymax/diun:4.21.0
     command: serve
     volumes:
       - "/nfs/docker/diun:/data"

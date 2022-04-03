@@ -1,30 +1,9 @@
 version: "3.5"
 
 services:
-  # mosquitto:
-    # image: eclipse-mosquitto:latest
-    # container_name: mosquitto
-    # volumes:
-      # - "/nfs/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf"
-      # - "/nfs/docker/mosquitto/data:/mosquitto/data"
-      # - "/nfs/docker/mosquitto/log:/mosquitto/log"
-    # ports:
-      # - "1883:1883"
-      # - "9001:9001"
-    # restart: unless-stopped
 
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/nfs/docker/portainer_rpi2:/data"
-    ports:
-      - "9000:9000"
-    restart: unless-stopped
-    
   zwave:
-    image: zwavejs/zwavejs2mqtt:latest
+    image: zwavejs/zwavejs2mqtt:6.5.2
     container_name: zwave
     volumes:
       - "/nfs/docker/zwavejs/store:/usr/src/app/store"
@@ -37,34 +16,9 @@ services:
       - "8091:8091"
       - "3000:3000"
     restart: unless-stopped
- 
-  # room-assistant:
-    # image: mkerix/room-assistant:latest
-    # container_name: room-assistant
-    # network_mode: "host"
-    # volumes:
-      # - /var/run/dbus:/var/run/dbus
-      # - /nfs/docker/roomassistant/config:/room-assistant/config
-    # restart: unless-stopped
-
-  # home-assistant-dev:
-    # image: homeassistant/raspberrypi4-homeassistant:stable
-    # container_name: home-assistant-dev
-    # volumes:
-      # - "/nfs/docker/ha_dev:/config"
-      # - "/etc/localtime:/etc/localtime:ro"
-      # - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
-      # - "/var/run/docker.sock:/var/run/docker.sock"
-    # environment:
-      # PUID: "1000"
-      # PGID: "1000"
-      # UMASK: "007"
-    # network_mode: "host"
-    # privileged: true
-    # restart: unless-stopped
     
   octoprint:
-    image: octoprint/octoprint:latest
+    image: octoprint/octoprint:1.7
     container_name: octoprint
     volumes:
       - "/nfs/docker/octoprint:/octoprint"
@@ -72,7 +26,6 @@ services:
       ENABLE_MJPG_STREAMER: "false"
     devices:
       - "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyACM0"
-#      - "/dev/video0:/dev/video0"
     ports:
       - "80:80"
     restart: unless-stopped

@@ -1,0 +1,8 @@
+version: "3.5"
+
+services:
+
+  my-ping:
+    image: whitness/my-ping:1.0
+    container_name: my-ping
+    restart: unless-stopped
