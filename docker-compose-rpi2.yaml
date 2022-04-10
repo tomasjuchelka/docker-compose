@@ -1,30 +1,9 @@
 version: "3.5"
 
 services:
-  mosquitto:
-    image: eclipse-mosquitto:latest
-    container_name: mosquitto
-    volumes:
-      - "/nfs/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf"
-      - "/nfs/docker/mosquitto/data:/mosquitto/data"
-      - "/nfs/docker/mosquitto/log:/mosquitto/log"
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    restart: unless-stopped
 
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/nfs/docker/portainer_rpi2:/data"
-    ports:
-      - "9000:9000"
-    restart: unless-stopped
-    
   zwave:
-    image: zwavejs/zwavejs2mqtt:latest
+    image: zwavejs/zwavejs2mqtt:6.7.0
     container_name: zwave
     volumes:
       - "/nfs/docker/zwavejs/store:/usr/src/app/store"
@@ -37,28 +16,48 @@ services:
       - "8091:8091"
       - "3000:3000"
     restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
     
-  room-assistant:
-    image: mkerix/room-assistant:latest
-    container_name: room-assistant
-    network_mode: "host"
+  octoprint:
+    image: octoprint/octoprint:1.7
+    container_name: octoprint
     volumes:
-      - /var/run/dbus:/var/run/dbus
-      - /nfs/docker/roomassistant/config:/room-assistant/config
+      - "/nfs/docker/octoprint:/octoprint"
+    environment:
+      ENABLE_MJPG_STREAMER: "false"
+    devices:
+      - "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyACM0"
+    ports:
+      - "80:80"
     restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
 
-  home-assistant-dev:
-    image: homeassistant/raspberrypi4-homeassistant:stable
-    container_name: home-assistant-dev
+  diun:
+    image: crazymax/diun:4.21.0
+    container_name: diun_rpi2
+    command: serve
     volumes:
-      - "/nfs/docker/ha_dev:/config"
-      - "/etc/localtime:/etc/localtime:ro"
-      - "/sys/class/thermal/thermal_zone0/temp:/thermal/thermal_zone0/temp"
+      - "/nfs/docker/diun/rpi2:/data"
       - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
-      PUID: "1000"
-      PGID: "1000"
-      UMASK: "007"
-    network_mode: "host"
-    privileged: true
+      - "TZ=Europe/Prague"
+      - "LOG_LEVEL=info"
+      - "LOG_JSON=false"
+      - "DIUN_WATCH_WORKERS=20"
+      - "DIUN_WATCH_SCHEDULE=0 */6 * * *"
+      - "DIUN_WATCH_FIRSTCHECKNOTIF=true"
+      - "DIUN_PROVIDERS_DOCKER=true"
+      - "DIUN_NOTIF_MQTT_SCHEME=mqtt"
+      - "DIUN_NOTIF_MQTT_HOST=192.168.11.123"
+      - "DIUN_NOTIF_MQTT_PORT=1883"
+      - "DIUN_NOTIF_MQTT_CLIENT=RPI2"
+      - "DIUN_NOTIF_MQTT_TOPIC=diun/docker_version"
     restart: unless-stopped
