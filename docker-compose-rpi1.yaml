@@ -15,6 +15,11 @@ services:
       DECONZ_VNC_MODE: "0"
       DECONZ_VNC_PORT: "5901"
     restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
     
   unifi-controller:
     image: jacobalberty/unifi:v7
@@ -28,4 +33,31 @@ services:
       - "/nfs/docker/unifi-controller:/unifi"
     environment:
       - "TZ=Europe/Prague"
+    restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^v\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+
+  diun:
+    image: crazymax/diun:4.21.0
+    container_name: diun_rpi1
+    command: serve
+    volumes:
+      - "/nfs/docker/diun/rpi1:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - "TZ=Europe/Prague"
+      - "LOG_LEVEL=info"
+      - "LOG_JSON=false"
+      - "DIUN_WATCH_WORKERS=20"
+      - "DIUN_WATCH_SCHEDULE=0 */6 * * *"
+      - "DIUN_WATCH_FIRSTCHECKNOTIF=true"
+      - "DIUN_PROVIDERS_DOCKER=true"
+      - "DIUN_NOTIF_MQTT_SCHEME=mqtt"
+      - "DIUN_NOTIF_MQTT_HOST=192.168.11.123"
+      - "DIUN_NOTIF_MQTT_PORT=1883"
+      - "DIUN_NOTIF_MQTT_CLIENT=RPI1"
+      - "DIUN_NOTIF_MQTT_TOPIC=diun/docker_version"
     restart: unless-stopped

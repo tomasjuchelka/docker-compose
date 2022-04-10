@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   home-assistant:
-    image: homeassistant/raspberrypi4-homeassistant:2022.3.0
+    image: homeassistant/raspberrypi4-homeassistant:2022.4.0
     ports:
       - "8123:8123"
     volumes:
@@ -50,7 +50,7 @@ services:
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   pihole:
-    image: pihole/pihole:2022.02.1
+    image: pihole/pihole:2022.04.1
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -205,9 +205,9 @@ services:
       - "DIUN_WATCH_FIRSTCHECKNOTIF=true"
       - "DIUN_PROVIDERS_SWARM=true"
       - "DIUN_NOTIF_MQTT_SCHEME=mqtt"
-      - "DIUN_NOTIF_MQTT_HOST=192.168.11.100"
+      - "DIUN_NOTIF_MQTT_HOST=192.168.11.123"
       - "DIUN_NOTIF_MQTT_PORT=1883"
-      - "DIUN_NOTIF_MQTT_CLIENT=DIUN"
+      - "DIUN_NOTIF_MQTT_CLIENT=SWARM"
       - "DIUN_NOTIF_MQTT_TOPIC=diun/docker_version"
     deploy:
       mode: replicated

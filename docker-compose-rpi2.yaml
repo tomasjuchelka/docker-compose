@@ -3,7 +3,7 @@ version: "3.5"
 services:
 
   zwave:
-    image: zwavejs/zwavejs2mqtt:6.5.2
+    image: zwavejs/zwavejs2mqtt:6.7.0
     container_name: zwave
     volumes:
       - "/nfs/docker/zwavejs/store:/usr/src/app/store"
@@ -16,6 +16,11 @@ services:
       - "8091:8091"
       - "3000:3000"
     restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
     
   octoprint:
     image: octoprint/octoprint:1.7
@@ -28,4 +33,31 @@ services:
       - "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/ttyACM0"
     ports:
       - "80:80"
+    restart: unless-stopped
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
+
+  diun:
+    image: crazymax/diun:4.21.0
+    container_name: diun_rpi2
+    command: serve
+    volumes:
+      - "/nfs/docker/diun/rpi2:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - "TZ=Europe/Prague"
+      - "LOG_LEVEL=info"
+      - "LOG_JSON=false"
+      - "DIUN_WATCH_WORKERS=20"
+      - "DIUN_WATCH_SCHEDULE=0 */6 * * *"
+      - "DIUN_WATCH_FIRSTCHECKNOTIF=true"
+      - "DIUN_PROVIDERS_DOCKER=true"
+      - "DIUN_NOTIF_MQTT_SCHEME=mqtt"
+      - "DIUN_NOTIF_MQTT_HOST=192.168.11.123"
+      - "DIUN_NOTIF_MQTT_PORT=1883"
+      - "DIUN_NOTIF_MQTT_CLIENT=RPI2"
+      - "DIUN_NOTIF_MQTT_TOPIC=diun/docker_version"
     restart: unless-stopped
