@@ -20,25 +20,6 @@ services:
       - "diun.watch_repo=true"
       - "diun.max_tags=5"
       - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
-    
-  unifi-controller:
-    image: jacobalberty/unifi:v7
-    container_name: unifi-controller
-    ports:
-      - "8443:8443"
-      - "3478:3478/udp"
-      - "10001:10001/udp"
-      - "8080:8080"
-    volumes:
-      - "/nfs/docker/unifi-controller:/unifi"
-    environment:
-      - "TZ=Europe/Prague"
-    restart: unless-stopped
-    labels:
-      - "diun.enable=true"
-      - "diun.watch_repo=true"
-      - "diun.max_tags=5"
-      - "diun.include_tags=^v\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   diun:
     image: crazymax/diun:4.21.0

@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   home-assistant:
-    image: homeassistant/raspberrypi4-homeassistant:2022.4.0
+    image: homeassistant/raspberrypi4-homeassistant:2022.4.4
     ports:
       - "8123:8123"
     volumes:
@@ -64,7 +64,7 @@ services:
     deploy:
       replicas: 1
       restart_policy:
-        condition: on-failure
+        condition: any
       labels:
         - "diun.enable=true"
         - "diun.watch_repo=true"
@@ -174,21 +174,59 @@ services:
         - "diun.max_tags=5"
         - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
-  # chronograf:
-    # image: chronograf:1.9.1
-    # volumes:
-      # - "/nfs/docker/chronograf:/var/lib/chronograf"
-    # ports:
-      # - "8888:8888"
-    # deploy:
-      # replicas: 1
-      # restart_policy:
-        # condition: on-failure
-      # labels:
-        # - "diun.enable=true"
-        # - "diun.watch_repo=true"
-        # - "diun.max_tags=5"
-        # - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+  grafana:
+    image: grafana/grafana-enterprise:8.5.0
+    volumes:
+      - "/nfs/docker/grafana:/var/lib/grafana"
+    ports:
+      - "3001:3000"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    user: "1000"
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}$$"
+
+  chronograf:
+    image: chronograf:1.9.4
+    volumes:
+      - "/nfs/docker/chronograf:/var/lib/chronograf"
+    ports:
+      - "8888:8888"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "diun.enable=true"
+        - "diun.watch_repo=true"
+        - "diun.max_tags=5"
+        - "diun.include_tags=^\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
+
+  unifi-controller:
+    image: jacobalberty/unifi:v7
+    ports:
+      - "8443:8443"
+      - "3478:3478/udp"
+      - "10001:10001/udp"
+      - "8080:8080"
+    volumes:
+      - "/nfs/docker/unifi-controller:/unifi"
+    environment:
+      - "TZ=Europe/Prague"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    labels:
+      - "diun.enable=true"
+      - "diun.watch_repo=true"
+      - "diun.max_tags=5"
+      - "diun.include_tags=^v\\d{1,2}\\.\\d{1,2}\\.\\d{0,2}$$"
 
   diun:
     image: crazymax/diun:4.21.0
